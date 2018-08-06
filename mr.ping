@@ -1,0 +1,52 @@
+var discord = require('discord.js');
+
+var client = new discord.Client();
+
+var loops = 0;                // amount of loops inside the timer
+var channel = null;        // channel where to send the pings
+var pingTimer = 0;        // timer id for sending messages (to prevent spam prevention messages)
+var pings;                // each message with all the pings it can fit within the limit
+var msgAmount = 0;             // amount of individual messages to send with the pings. each message has to be less than 2000 characters.
+
+client.login("your-token");
+
+client.on('ready', () => {
+    console.log("Everything ready! GET READY FOR THE PINGING!");
+});
+
+client.on('message', message => {
+    if (message.content.toLowerCase() == "mr.ping")
+    {
+        var users = message.guild.members.array();    // all of the guild's members
+        
+        pings = new Array(users.length);
+        pings[0] = "";
+        
+        for (i = 0; i < users.length; i++)    // loop through all the users to write each id in each message
+        {
+            pings[msgAmount] += " <@" + users[i].user.id + ">";        // add the ping if the message is within the limit
+            
+            if (pings[msgAmount].length > 1950)        // if the message is about to reach the 2000 character limit, skip a ping and add the next message to the next array slot
+            {
+                msgAmount++;
+            }
+        }
+        
+        loops = 0;
+        channel = message.channel;
+        pingTimer = setInterval(sendPings, 2000); // can't pass arguments through repeating timer, send them to a global variable and execute
+    }
+});
+
+function sendPings()
+{
+    if (loops > msgAmount)
+    {
+        loops = 0;
+        clearInterval(pingTimer);
+        return;
+    }
+    
+    channel.send(pings[loops]);
+    loops++;
+}
